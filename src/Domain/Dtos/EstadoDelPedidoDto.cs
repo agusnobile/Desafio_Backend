@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Desafio_backend.Domain.Entities
+namespace Desafio_backend.Domain.Dtos
 {
-    internal class Class1
+    public record struct EstadoDelPedidoDto(int Id, string Descripcion)
     {
     }
 }
