@@ -29,20 +29,40 @@ namespace Desafio_backend.Application.UseCase.V1.PedidoOperation.Queries.GetList
 
         public async Task<Response<PedidosDto>> Handle(GetPedido request, CancellationToken cancellationToken)
         {
-            var stringsql = $"select p.Id, p.CicloDelPedido, p.CodigoDeContratoInterno, p.cuando, p.CuentaCorriente, p.NumeroDePedido, ep.descripcion as EstadoDelPedido from pedidos p inner join EstadoDelPedido ep on p.EstadoDelPedido=ep.Id where p.Id='{request.Id}'";
-            var pedidos = await _query.FirstOrDefaultQueryAsync<PedidosDto>(stringsql);
-            var response = new Response<PedidosDto>
+            var result = await _query.GetByIdAsync<Pedidos>(nameof(request.Id), request.Id);
+
+
+
+            var sqlString = $"select * from dbo.EstadoDelpedido where id = '{result.EstadoDelPedido}'";
+            var resultadoEstadoDelPedido = await _query.FirstOrDefaultQueryAsync<EstadoDelPedido>(sqlString);
+
+
+
+
+            PedidosDto pedidodto = new PedidosDto()
             {
-                Content = pedidos,
+
+
+
+                Id = result.Id,
+                NumeroDePedido = result.NumerodePedido,
+                CicloDelPedido = result.CicloDelPedido,
+                CodigoDeContratoInterno = result.CodigoDeContratoInterno,
+                EstadoDelPedido = new EstadoDelPedido()
+                {
+                    Id = resultadoEstadoDelPedido is null ? 1 : resultadoEstadoDelPedido.Id,
+                    Descripcion = resultadoEstadoDelPedido is null ? "Vacio" : resultadoEstadoDelPedido.Descripcion
+                },
+                CuentaCorriente = result.CuentaCorriente,
+                Cuando = result.Cuando.ToString("MM/dd/yyyy")
+
+
+            };
+            return new Response<PedidosDto>
+            {
+                Content = pedidodto,
                 StatusCode = System.Net.HttpStatusCode.OK
             };
-            if (pedidos is null)
-            {
-                response.AddNotification("#3123", nameof(request.Id), string.Format(ErrorMessage.NOT_FOUND_RECORD, "Pedido", request.Id));
-                response.StatusCode = System.Net.HttpStatusCode.NotFound;
-                
-            }
-            return response;
         }
     }
 }

@@ -26,12 +26,48 @@ namespace Desafio_backend.Application.UseCase.V1.PedidoOperation.Queries.GetList
 
         public async Task<Response<List<PedidosDto>>> Handle(ListPedidos request, CancellationToken cancellationToken)
         {
-            var pedidos = await _query.ExecuteQueryAsync<PedidosDto>("select p.Id, p.CicloDelPedido, p.CodigoDeContratoInterno, p.cuando, p.CuentaCorriente, p.NumeroDePedido, ep.descripcion as EstadoDelPedido from pedidos p inner join EstadoDelPedido ep on p.EstadoDelPedido=ep.Id");
+            var result = await _query.GetAllAsync<Pedidos>(nameof(Pedidos));
+            List<PedidosDto> resultPedidos = new List<PedidosDto>();
+
+
+
+            foreach (var item in result)
+            {
+                var sqlString = $"select * from dbo.EstadoDelpedido where id = '{item.EstadoDelPedido}'";
+                var resultadoEstadoDelPedido = await _query.FirstOrDefaultQueryAsync<EstadoDelPedido>(sqlString);
+
+
+
+
+                PedidosDto pedidodto = new PedidosDto()
+                {
+
+
+
+                    Id = item.Id,
+                    NumeroDePedido = item.NumerodePedido,
+                    CicloDelPedido = item.CicloDelPedido,
+                    CodigoDeContratoInterno = item.CodigoDeContratoInterno,
+                    EstadoDelPedido = new EstadoDelPedido()
+                    {
+                        Id = resultadoEstadoDelPedido is null ? 1 : resultadoEstadoDelPedido.Id,
+                        Descripcion = resultadoEstadoDelPedido is null ? "Rechazado" : resultadoEstadoDelPedido.Descripcion
+                    },
+                    CuentaCorriente = item.CuentaCorriente,
+                    Cuando = item.Cuando.ToString("MM/dd/yyyy")
+
+
+
+
+
+                };
+                resultPedidos.Add(pedidodto);
+            }
 
 
             return new Response<List<PedidosDto>>
             {
-                Content = pedidos.ToList(),
+                Content = resultPedidos,
                 StatusCode = System.Net.HttpStatusCode.OK
             };
         }
